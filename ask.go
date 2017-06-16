@@ -58,11 +58,9 @@ func (q *Q) Confirm(s string) bool {
 		}
 		return strings.ToLower(strings.TrimSpace(res))[0] == 'y'
 	}
-
 	if q.Retry > 1 && t == 0 {
 		fmt.Fprintln(q.stdout, "Retry over")
 	}
-
 	return false
 }
 

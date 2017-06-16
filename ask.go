@@ -1,3 +1,4 @@
+// Package ask provides some simple question methods
 package ask
 
 import (
@@ -10,51 +11,62 @@ import (
 )
 
 const (
-	defaultPrompt string = `%s [y/n]: `
-	defaultRetry  int    = 1
+	defaultPrompt  string = `%s [y/n]: `
+	defaultRetry   int    = 1
+	defaultNewline bool   = true
 )
 
+// Q is question object
 type Q struct {
-	PromptFormat string
-	Retries      int
-	Input        io.Reader
-	Output       io.Writer
+	// Prompt is the format of the question text
+	Prompt string
+	// Retry indicates the number of repetitions of Y/N
+	Retry int
+	// Newline returns true if allow empty input (e.g. newline)
+	Newline bool
+
+	stdin  io.Reader
+	stdout io.Writer
+	stderr io.Writer
 }
 
+// NewQ returns new Q
 func NewQ() *Q {
 	return &Q{
-		PromptFormat: defaultPrompt,
-		Retries:      defaultRetry,
-		Input:        os.Stdin,
-		Output:       os.Stdout,
+		Prompt:  defaultPrompt,
+		Retry:   defaultRetry,
+		Newline: defaultNewline,
+		stdin:   os.Stdin,
+		stdout:  os.Stdout,
+		stderr:  os.Stderr,
 	}
 }
 
+// Confirm makes a simple closed question
 func (q *Q) Confirm(s string) bool {
-	r := bufio.NewReader(q.Input)
-	t := q.Retries
+	r := bufio.NewReader(q.stdin)
+	t := q.Retry
 	for ; t > 0; t-- {
-		fmt.Fprintf(q.Output, q.PromptFormat, s)
+		fmt.Fprintf(q.stdout, q.Prompt, s)
 		res, err := r.ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		// Empty input (i.e. "\n")
-		if len(res) < 2 {
+		if q.Newline && len(res) < 2 {
 			continue
 		}
-
 		return strings.ToLower(strings.TrimSpace(res))[0] == 'y'
 	}
 
-	if q.Retries > 1 && t == 0 {
-		fmt.Fprintln(q.Output, "Retries over")
+	if q.Retry > 1 && t == 0 {
+		fmt.Fprintln(q.stdout, "Retry over")
 	}
 
 	return false
 }
 
+// Confirmf is Confirm with a trailing "f" wrap fmt.Sprintf
 func (q *Q) Confirmf(qfmt string, a ...interface{}) bool {
 	return q.Confirm(fmt.Sprintf(qfmt, a...))
 }

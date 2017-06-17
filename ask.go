@@ -8,6 +8,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"syscall"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -69,7 +72,17 @@ func (q *Q) Confirmf(qfmt string, a ...interface{}) bool {
 	return q.Confirm(fmt.Sprintf(qfmt, a...))
 }
 
-// Password is not implemented yet
-func Password(s string) error {
-	return nil
+// Password reads password without echo
+func Password(s string) (input []byte, err error) {
+	if len(s) > 0 {
+		fmt.Print(s)
+	}
+	input, err = terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return
+	}
+	if len(s) > 0 {
+		fmt.Println("")
+	}
+	return
 }
